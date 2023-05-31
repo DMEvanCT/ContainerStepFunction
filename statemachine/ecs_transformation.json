@@ -1,5 +1,5 @@
 {
-    "StartAt": "customer_data_upload",
+    "StartAt": "employee_info_process",
     "States": {
         "employee_info_process": {
             "Type": "Task",
