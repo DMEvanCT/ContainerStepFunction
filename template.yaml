@@ -28,7 +28,30 @@ Resources:
                   - ecs.amazonaws.com
                 Action:
                 - sts:AssumeRole
+        ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
+            - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+            - arn:aws:iam::aws:policy/CloudWatchLogs
 
+  ECSPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "states:DescribeExecution"
+              - "states:SendTaskSuccess"
+              - "states:SendTaskFailure"
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+            Resource:
+              - "*"
+      PolicyName: "ECSPolicy"
+      Roles:
+        - !Ref ECSRole
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -38,39 +61,61 @@ Resources:
         - FARGATE
       Cpu: '256'
       Memory: '512'
+      ExecutionRoleArn: !Ref ECSRole
       ContainerDefinitions:
         - Name: state
-          Image: '{resolve:ssm:/state/repository-uri}'
+          Image: !Sub '{resolve:ssm:/state/repository-uri}:${CommitId}'
           PortMappings:
             - ContainerPort: 80
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: /ecs/MyNginxTask
+              awslogs-group: /ecs/state
               awslogs-region: us-east-1
               awslogs-stream-prefix: ecs
 
 
+# State machine role
+  StateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: StateMachineRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
 
-
+  StateMachinePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "ecs:RunTask"
+              - "ecs:DescribeTasks"
+              - "ecs:StopTask"
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+            Resource:
+              - "*"
+      PolicyName: "StateMachinePolicy"
+      Roles:
+        - !Ref StateMachineRole
 
   ECSStateMachine:
     Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
     Properties:
       DefinitionUri: statemachine/ecs_transformation.json
+      Role: !Ref StateMachineRole
       DefinitionSubstitutions:
         ECS_CLUSTER: !Ref ECSCluster
         ECS_TASK_DEFINITION: !Ref TaskDefinition
 
-
-
-Outputs:
-  # StockTradingStateMachineHourlyTradingSchedule is an implicit Schedule event rule created out of Events key under Serverless::StateMachine
-  # Find out more about other implicit resources you can reference within SAM
-  # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-generated-resources.html
-  EXCSStateMachineArn:
-    Description: "Stock Trading State machine ARN"
-    Value: !Ref ECSStateMachine
-  ECSStateMachineRoleArn:
-    Description: "IAM Role created for Stock Trading State machine based on the specified SAM Policy Templates"
-    Value: !GetAtt ECSStateMachineRole.Arn
