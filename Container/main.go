@@ -45,11 +45,14 @@ func main() {
 
 	jsonError := json.Unmarshal([]byte(employeeData), &emp)
 	if jsonError != nil {
-		sfn.SendTaskFailure(&sfn.SendTaskFailureInput{
+		_, err := stepFunction.SendTaskFailure(&sfn.SendTaskFailureInput{
 			Cause:     aws.String("JSON Parse Error"),
 			Error:     aws.String("Invalid JSON"),
 			TaskToken: aws.String(TaskToken),
 		})
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	fmt.Printf("Parsed data: %+v\n", emp)
