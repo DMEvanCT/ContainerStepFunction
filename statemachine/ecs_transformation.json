@@ -18,7 +18,7 @@
                             "Value.$": "$$.Task.Token"
                         },
                             {
-                                "Name": "REGION",
+                                "Name": "AWS_REGION",
                                 "Value.$": "${AWS::Region}"
                             }]
                     }]
