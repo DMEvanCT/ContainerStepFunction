@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Core template for state machine example
+
+Resources:
+  ECRRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: state
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: IMMUTABLE
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire images older than 14 days",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 14
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+  RepositoryURI:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /state/repository-uri
+      Type: String
+      Value: !GetAtt ECRRepo.RepositoryUri
+      Description: Repository URL
+      Tags:
+        - Key: Stack
+          Value: !Sub ${AWS::StackName}

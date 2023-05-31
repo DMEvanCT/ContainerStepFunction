@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'StateMachine
+
+  Template for ECS
+
+  '
+Resources:
+  ECSStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: ../../statemachine/ecs_transformation.json
+Outputs:
+  EXCSStateMachineArn:
+    Description: Stock Trading State machine ARN
+    Value:
+      Ref: ECSStateMachine
+  ECSStateMachineRoleArn:
+    Description: IAM Role created for Stock Trading State machine based on the specified
+      SAM Policy Templates
+    Value:
+      Fn::GetAtt:
+      - ECSStateMachineRole
+      - Arn

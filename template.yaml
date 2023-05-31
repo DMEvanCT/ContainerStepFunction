@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  StateMachine
+
+  Template for ECS
+
+Parameters:
+  CommitId:
+    Type: String
+    Description: "Commit ID of the code to be deployed"
+    Default: "latest"
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+
+  ECSRole:
+    Type: AWS::IAM::Role
+    Properties:
+        RoleName: ECSRole
+        AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+            - Effect: Allow
+                Principal:
+                Service:
+                    - ecs.amazonaws.com
+                Action:
+                - sts:AssumeRole
+        ManagedPolicyArns:
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      NetworkMode:  none
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '256'
+      Memory: '512'
+      ContainerDefinitions:
+        - Name: state
+          Image: state:latest
+          PortMappings:
+            - ContainerPort: 80
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/MyNginxTask
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: ecs
+
+
+
+
+
+  ECSStateMachine:
+    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    Properties:
+      DefinitionUri: statemachine/ecs_transformation.json
+
+
+
+Outputs:
+  # StockTradingStateMachineHourlyTradingSchedule is an implicit Schedule event rule created out of Events key under Serverless::StateMachine
+  # Find out more about other implicit resources you can reference within SAM
+  # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-generated-resources.html
+  EXCSStateMachineArn:
+    Description: "Stock Trading State machine ARN"
+    Value: !Ref ECSStateMachine
+  ECSStateMachineRoleArn:
+    Description: "IAM Role created for Stock Trading State machine based on the specified SAM Policy Templates"
+    Value: !GetAtt ECSStateMachineRole.Arn

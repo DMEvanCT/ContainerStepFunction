@@ -1,0 +1,36 @@
+{
+    "StartAt": "customer_data_upload",
+    "States": {
+        "customer_data_upload": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::ecs:runTask.sync",
+            "Parameters": {
+                "LaunchType": "FARGATE",
+                "Cluster": "${ECS_CLUSTER}",
+                "TaskDefinition": "${TASK_DEFINITION_ARN}",
+                "Overrides": {
+                    "ContainerOverrides": [{
+                        "Environment": [{
+                            "Name": "EMPLOYEE_INFO",
+                            "Value.$": "$.employeeInfo"
+                        }, {
+                            "Name": "TASK_TOKEN",
+                            "Value.$": "$$.Task.Token"
+                        },
+                            {
+                                "Name": "REGION",
+                                "Value.$": "${AWS::Region}"
+                            }]
+                    }]
+                }
+            },
+            "Retry": [{
+                "ErrorEquals": ["States.TaskFailed"],
+                "IntervalSeconds": 3,
+                "MaxAttempts": 2,
+                "BackoffRate": 1.5
+            }],
+            "End": true
+        }
+    }
+}
