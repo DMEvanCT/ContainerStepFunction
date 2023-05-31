@@ -28,10 +28,12 @@ type TaskFailure struct {
 }
 
 func main() {
+	// Get environment variables
 	TaskToken := os.Getenv("TASK_TOKEN")
 	employeeData := os.Getenv("EMPLOYEE_JSON_ENV")
 	region := os.Getenv("AWS_REGION")
 
+	// Setup the AWS Session
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region),
 	})
@@ -39,6 +41,7 @@ func main() {
 		fmt.Println("Error creating session: ", err)
 
 	}
+	// Set up the Step Function client
 	stepFunction := sfn.New(sess)
 
 	var emp Employee
