@@ -1,7 +1,7 @@
 {
     "StartAt": "customer_data_upload",
     "States": {
-        "customer_data_upload": {
+        "employee_info_process": {
             "Type": "Task",
             "Resource": "arn:aws:states:::ecs:runTask.sync",
             "Parameters": {
