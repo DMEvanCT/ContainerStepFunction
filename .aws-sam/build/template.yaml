@@ -1,24 +1,31 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'StateMachine
-
-  Template for ECS
+Description: 'Core template for state machine example
 
   '
 Resources:
-  ECSStateMachine:
-    Type: AWS::Serverless::StateMachine
+  ECRRepo:
+    Type: AWS::ECR::Repository
     Properties:
-      DefinitionUri: ../../statemachine/ecs_transformation.json
-Outputs:
-  EXCSStateMachineArn:
-    Description: Stock Trading State machine ARN
-    Value:
-      Ref: ECSStateMachine
-  ECSStateMachineRoleArn:
-    Description: IAM Role created for Stock Trading State machine based on the specified
-      SAM Policy Templates
-    Value:
-      Fn::GetAtt:
-      - ECSStateMachineRole
-      - Arn
+      RepositoryName: state
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: IMMUTABLE
+      LifecyclePolicy:
+        LifecyclePolicyText: "{\n  \"rules\": [\n    {\n      \"rulePriority\": 1,\n\
+          \      \"description\": \"Expire images older than 14 days\",\n      \"\
+          selection\": {\n        \"tagStatus\": \"untagged\",\n        \"countType\"\
+          : \"sinceImagePushed\",\n        \"countUnit\": \"days\",\n        \"countNumber\"\
+          : 14\n      },\n      \"action\": {\n        \"type\": \"expire\"\n    \
+          \  }\n    }\n  ]\n}\n"
+  RepositoryURI:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /state/repository-uri
+      Type: String
+      Value:
+        Fn::GetAtt:
+        - ECRRepo
+        - RepositoryUri
+      Description: Repository URL
+

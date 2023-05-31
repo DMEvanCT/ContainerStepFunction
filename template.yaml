@@ -23,12 +23,12 @@ Resources:
             Version: 2012-10-17
             Statement:
             - Effect: Allow
-                Principal:
+              Principal:
                 Service:
-                    - ecs.amazonaws.com
+                  - ecs.amazonaws.com
                 Action:
                 - sts:AssumeRole
-        ManagedPolicyArns:
+
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -40,7 +40,7 @@ Resources:
       Memory: '512'
       ContainerDefinitions:
         - Name: state
-          Image: state:latest
+          Image: '{resolve:ssm:/state/repository-uri}'
           PortMappings:
             - ContainerPort: 80
           LogConfiguration:
